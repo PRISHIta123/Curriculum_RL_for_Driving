@@ -34,8 +34,6 @@ import sys
 import math
 import numpy as np
 
-np.random.seed(0)
-
 import Box2D
 from Box2D.b2 import fixtureDef
 from Box2D.b2 import polygonShape
@@ -65,27 +63,14 @@ FPS = 50  # Frames per second
 ZOOM = 2.7  # Camera zoom
 ZOOM_FOLLOW = True  # Set to False for fixed view (don't use zoom)
 
+
 TRACK_DETAIL_STEP = 21 / SCALE
-
-import random
-
-random.seed(0)
-
-TURN_RATES = [0.31, 0.41, 0.51, 0.61, 0.71]
-PROBS = [0.05, 0.07, 0.09, 0.11, 0.13]
-
 TRACK_TURN_RATE = 0.31
 TRACK_WIDTH = 40 / SCALE
 BORDER = 8 / SCALE
 BORDER_MIN_COUNT = 4
 
 ROAD_COLOR = [0.4, 0.4, 0.4]
-
-# probability of an obstacle
-OBSTACLE_PROB = 0.05
-OBSTACLE_PENALTY = 50.0
-OBSTACLE_SPACING = 20  # minimum distance between obstacles (in tiles)
-OBSTACLE_COLOR = [240 / 255, 102 / 255, 102 / 255]  # light red
 
 
 class FrictionDetector(contactListener):
@@ -113,42 +98,19 @@ class FrictionDetector(contactListener):
         if not tile:
             return
 
-        # If the tile's friction is above a certain value,
-        # this indicates that the car ran into an obstacle.
-        is_obstacle = tile.road_friction > 2.0
-
-        # Turns visited road tiles into default road color,
-        # but leaves obstacle tiles alone.
-        if not is_obstacle:
-            tile.color[0] = ROAD_COLOR[0]
-            tile.color[1] = ROAD_COLOR[1]
-            tile.color[2] = ROAD_COLOR[2]
+        tile.color[0] = ROAD_COLOR[0]
+        tile.color[1] = ROAD_COLOR[1]
+        tile.color[2] = ROAD_COLOR[2]
         if not obj or "tiles" not in obj.__dict__:
             return
         if begin:
             obj.tiles.add(tile)
-
-            # We should always incur a penalty for obstacles,
-            # even if we have visited them before,
-            # as long as we aren't currently in contact with them.
-            if is_obstacle and not tile.currently_in_contact:
-                self.env.reward -= tile.road_friction
-                self.env.num_collisions += 1
-
-            # For all tiles we record whether we have visited them before.
-            # But only incur reward for the first time we visit the road (non-obstacle) tiles.
             if not tile.road_visited:
                 tile.road_visited = True
-                if not is_obstacle:
-                    self.env.reward += 1000.0 / len(self.env.track)
-                    self.env.tile_visited_count += 1
-
-            # Set currently_in_contact to true since we are currently in contact with the tile.
-            tile.currently_in_contact = True
+                self.env.reward += 1000.0 / len(self.env.track)
+                self.env.tile_visited_count += 1
         else:
             obj.tiles.remove(tile)
-            tile.currently_in_contact = False
-
 
 def check_if_car_on_grass(car):
     """
@@ -173,14 +135,13 @@ def check_if_car_on_grass(car):
     else:
         return False
 
-
-class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
+class CarRacingDefault(gym.Env, EzPickle):
     metadata = {
         "render.modes": ["human", "rgb_array", "state_pixels"],
         "video.frames_per_second": FPS,
     }
 
-    def __init__(self, verbose=0):
+    def __init__(self, verbose=1):
         EzPickle.__init__(self)
         self.seed(0)
         self.contactListener_keepref = FrictionDetector(self)
@@ -205,8 +166,6 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8
         )
-        self.num_obstacles = 0  # counts total number of obstacles presently in the track
-        self.num_collisions = 0  # counts total number of collisions with obstacles
         self.total_grass_timesteps = 0  # counts total timesteps on grass
         self.total_road_or_obstacle_timesteps = 0  # counts total timesteps on road/obstacles
 
@@ -312,7 +271,7 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
             if i == 0:
                 return False  # Failed
             pass_through_start = (
-                    track[i][0] > self.start_alpha and track[i - 1][0] <= self.start_alpha
+                track[i][0] > self.start_alpha and track[i - 1][0] <= self.start_alpha
             )
             if pass_through_start and i2 == -1:
                 i2 = i
@@ -324,7 +283,7 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
         assert i1 != -1
         assert i2 != -1
 
-        track = track[i1: i2 - 1]
+        track = track[i1 : i2 - 1]
 
         first_beta = track[0][1]
         first_perp_x = math.cos(first_beta)
@@ -354,7 +313,6 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
                 border[i - neg] |= border[i]
 
         # Create tiles
-        last_obst_idx = 0
         for i in range(len(track)):
             alpha1, beta1, x1, y1 = track[i]
             alpha2, beta2, x2, y2 = track[i - 1]
@@ -375,31 +333,16 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
                 y2 + TRACK_WIDTH * math.sin(beta2),
             )
             vertices = [road1_l, road1_r, road2_r, road2_l]
-
-            # With probability OBSTACLE_PROB, add an obstacle,
-            # which is just a red-colored tile whose friction is equal to the
-            # OBSTACLE_PENALTY parameter, and which covers one half of the road surface.
-            if (np.random.uniform() < OBSTACLE_PROB and (i - last_obst_idx) > OBSTACLE_SPACING and not border[i]):
-                last_obst_idx = i
-                road1_mid = (x1, y1)
-                road2_mid = (x2, y2)
-                # Randomize either a left or right obstacle
-                # And make the road tile only cover the other half of the road
-                left_vertices = [road1_l, road1_mid, road2_mid, road2_l]
-                right_vertices = [road1_mid, road1_r, road2_r, road2_mid]
-                if (np.random.uniform() < 0.5):
-                    obst = left_vertices
-                    vertices = right_vertices
-                else:
-                    obst = right_vertices
-                    vertices = left_vertices
-                # Add obstacle tile
-                self._add_road_tile(i, obst, OBSTACLE_COLOR, OBSTACLE_PENALTY)
-                # Increment number of obstacles by 1.
-                self.num_obstacles += 1
-            # Add road tile
-            self._add_road_tile(i, vertices, ROAD_COLOR, 1.0)
-
+            self.fd_tile.shape.vertices = vertices
+            t = self.world.CreateStaticBody(fixtures=self.fd_tile)
+            t.userData = t
+            c = 0.01 * (i % 3)
+            t.color = [ROAD_COLOR[0] + c, ROAD_COLOR[1] + c, ROAD_COLOR[2] + c]
+            t.road_visited = False
+            t.road_friction = 1.0
+            t.fixtures[0].sensor = True
+            self.road_poly.append(([road1_l, road1_r, road2_r, road2_l], t.color))
+            self.road.append(t)
             if border[i]:
                 side = np.sign(beta2 - beta1)
                 b1_l = (
@@ -424,26 +367,6 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
         self.track = track
         return True
 
-    def _add_road_tile(self, idx, vertices, tile_color, tile_friction):
-        """Add a road tile to the track.
-        Args:
-            idx: Index of the tile.
-            vertices: List of 4 vertices of the tile.
-            tile_color: Color of the tile.
-            tile_friction: Friction of the tile.
-        """
-        self.fd_tile.shape.vertices = vertices
-        t = self.world.CreateStaticBody(fixtures=self.fd_tile)
-        t.userData = t
-        c = 0.01 * (idx % 3)
-        t.color = np.array(tile_color) + c
-        t.road_visited = False
-        t.road_friction = tile_friction
-        t.fixtures[0].sensor = True
-        t.currently_in_contact = False
-        self.road_poly.append(([vertices[0], vertices[1], vertices[2], vertices[3]], t.color))
-        self.road.append(t)
-
     def reset(self):
         self._destroy()
         self.reward = 0.0
@@ -451,19 +374,10 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
         self.tile_visited_count = 0
         self.t = 0.0
         self.road_poly = []
-        self.num_obstacles = 0
-        self.num_collisions = 0
         self.total_grass_timesteps = 0
         self.total_road_or_obstacle_timesteps = 0
 
-        global TRACK_TURN_RATE
-        global OBSTACLE_PROB
-
-        TRACK_TURN_RATE = random.choice(TURN_RATES)
-        OBSTACLE_PROB = random.choice(PROBS)
-
         while True:
-
             success = self._create_track()
             if success:
                 break
@@ -473,8 +387,6 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
                     "instances of this message)"
                 )
         self.car = Car(self.world, *self.track[0][1:4])
-
-        # print(f"Total number of obstacles in the track: {self.num_obstacles}")
 
         return self.step(None)[0]
 
@@ -513,10 +425,7 @@ class CarRacingObstaclesEvalBoth(gym.Env, EzPickle):
                 done = True
                 step_reward = -100
 
-        return self.state, step_reward, done, {"num_obstacles": self.num_obstacles,
-                                               "num_collisions": self.num_collisions, "tiles": self.tile_visited_count,
-                                               "grass_time": self.total_grass_timesteps,
-                                               "total_time": self.total_road_or_obstacle_timesteps}
+        return self.state, step_reward, done, {"tiles": self.tile_visited_count, "grass_time": self.total_grass_timesteps, "total_time": self.total_road_or_obstacle_timesteps}
 
     def render(self, mode="human"):
         assert mode in ["human", "state_pixels", "rgb_array"]
@@ -725,7 +634,6 @@ if __name__ == "__main__":
 
     a = np.array([0.0, 0.0, 0.0])
 
-
     def key_press(k, mod):
         global restart
         if k == 0xFF0D:
@@ -739,7 +647,6 @@ if __name__ == "__main__":
         if k == key.DOWN:
             a[2] = +0.8  # set 1.0 for wheels to block to zero rotation
 
-
     def key_release(k, mod):
         if k == key.LEFT and a[0] == -1.0:
             a[0] = 0
@@ -750,8 +657,7 @@ if __name__ == "__main__":
         if k == key.DOWN:
             a[2] = 0
 
-
-    env = CarRacingObstaclesEvalBoth()
+    env = CarRacingDefault()
     env.render()
     env.viewer.window.on_key_press = key_press
     env.viewer.window.on_key_release = key_release
@@ -772,10 +678,8 @@ if __name__ == "__main__":
             if steps % 200 == 0 or done:
                 print("\naction " + str(["{:+0.2f}".format(x) for x in a]))
                 print("step {} total_reward {:+0.2f}".format(steps, total_reward))
-                print(f"Info dict {info}")
             steps += 1
             isopen = env.render()
             if done or restart or isopen == False:
                 break
     env.close()
-

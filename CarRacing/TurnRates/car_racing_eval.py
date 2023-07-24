@@ -117,6 +117,28 @@ class FrictionDetector(contactListener):
         else:
             obj.tiles.remove(tile)
 
+def check_if_car_on_grass(car):
+    """
+    Checks to see if car is on the grass, which is the case if all of the car's wheels
+    is not in contact with any tiles (i.e. the car is not in contact with any road or obstacle tiles).
+    Note that in some cases, even if one of the wheels is grazing the grass,
+    the car may not be considered to be on the grass if that wheel is still in contact with a road or obstacle tile.
+    (so there is a "buffer region" around the road where the car is not considered to be on the grass).
+    Args:
+        car (car_racing.Car)
+    Return:
+        true if car is on the grass, false otherwise
+    """
+    cnt = 0
+
+    for w in car.wheels:
+        if len(w.tiles) == 0:
+            cnt += 1
+            # wheel is on the grass (not in contact with any tiles, either road or obstacle)
+    if cnt == 4:
+        return True
+    else:
+        return False
 
 class CarRacingEval(gym.Env, EzPickle):
     metadata = {
@@ -149,6 +171,9 @@ class CarRacingEval(gym.Env, EzPickle):
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8
         )
+
+        self.total_grass_timesteps = 0  # counts total timesteps on grass
+        self.total_road_or_obstacle_timesteps = 0  # counts total timesteps on road/obstacles
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -355,6 +380,8 @@ class CarRacingEval(gym.Env, EzPickle):
         self.tile_visited_count = 0
         self.t = 0.0
         self.road_poly = []
+        self.total_grass_timesteps = 0
+        self.total_road_or_obstacle_timesteps = 0
 
         global TRACK_TURN_RATE
         TRACK_TURN_RATE = random.choice(TURN_RATES)
@@ -393,6 +420,13 @@ class CarRacingEval(gym.Env, EzPickle):
             self.car.fuel_spent = 0.0
             step_reward = self.reward - self.prev_reward
             self.prev_reward = self.reward
+
+            # Check if car is on the grass
+            if check_if_car_on_grass(self.car):
+                self.total_grass_timesteps += 1
+            else:
+                self.total_road_or_obstacle_timesteps += 1
+
             if self.tile_visited_count == len(self.track):
                 done = True
             x, y = self.car.hull.position
@@ -400,7 +434,7 @@ class CarRacingEval(gym.Env, EzPickle):
                 done = True
                 step_reward = -100
 
-        return self.state, step_reward, done, {}
+        return self.state, step_reward, done, {"tiles": self.tile_visited_count, "grass_time": self.total_grass_timesteps, "total_time": self.total_road_or_obstacle_timesteps}
 
     def render(self, mode="human"):
         assert mode in ["human", "state_pixels", "rgb_array"]
@@ -658,3 +692,4 @@ if __name__ == "__main__":
             if done or restart or isopen == False:
                 break
     env.close()
+

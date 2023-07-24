@@ -33,6 +33,7 @@ Created by Oleg Klimov. Licensed on the same terms as the rest of OpenAI Gym.
 import sys
 import math
 import numpy as np
+
 np.random.seed(0)
 
 import Box2D
@@ -44,8 +45,6 @@ import gym
 from gym import spaces
 from gym.envs.box2d.car_dynamics import Car
 from gym.utils import seeding, EzPickle
-
-import time
 
 import pyglet
 
@@ -66,10 +65,13 @@ FPS = 50  # Frames per second
 ZOOM = 2.7  # Camera zoom
 ZOOM_FOLLOW = True  # Set to False for fixed view (don't use zoom)
 
-
 TRACK_DETAIL_STEP = 21 / SCALE
 
-INTERVAL= 2880
+import random
+
+random.seed(0)
+
+PROBS = [0.05, 0.07, 0.09, 0.11, 0.13]
 
 TRACK_TURN_RATE = 0.31
 TRACK_WIDTH = 40 / SCALE
@@ -78,16 +80,12 @@ BORDER_MIN_COUNT = 4
 
 ROAD_COLOR = [0.4, 0.4, 0.4]
 
-import random
-random.seed(0)
-
-PROBS= [0.05,0.07,0.09,0.11,0.13]
-
-#probability of an obstacle
+# probability of an obstacle
 OBSTACLE_PROB = 0.05
 OBSTACLE_PENALTY = 50.0
-OBSTACLE_SPACING = 20   # minimum distance between obstacles (in tiles)
-OBSTACLE_COLOR = [240/255, 102/255, 102/255] # light red
+OBSTACLE_SPACING = 20  # minimum distance between obstacles (in tiles)
+OBSTACLE_COLOR = [240 / 255, 102 / 255, 102 / 255]  # light red
+
 
 class FrictionDetector(contactListener):
     def __init__(self, env):
@@ -151,6 +149,30 @@ class FrictionDetector(contactListener):
             tile.currently_in_contact = False
 
 
+def check_if_car_on_grass(car):
+    """
+    Checks to see if car is on the grass, which is the case if all of the car's wheels
+    is not in contact with any tiles (i.e. the car is not in contact with any road or obstacle tiles).
+    Note that in some cases, even if one of the wheels is grazing the grass,
+    the car may not be considered to be on the grass if that wheel is still in contact with a road or obstacle tile.
+    (so there is a "buffer region" around the road where the car is not considered to be on the grass).
+    Args:
+        car (car_racing.Car)
+    Return:
+        true if car is on the grass, false otherwise
+    """
+    cnt = 0
+
+    for w in car.wheels:
+        if len(w.tiles) == 0:
+            cnt += 1
+            # wheel is on the grass (not in contact with any tiles, either road or obstacle)
+    if cnt == 4:
+        return True
+    else:
+        return False
+
+
 class CarRacingObstaclesEval(gym.Env, EzPickle):
     metadata = {
         "render.modes": ["human", "rgb_array", "state_pixels"],
@@ -182,8 +204,10 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8
         )
-        self.num_obstacles=0    # counts total number of obstacles presently in the track
-        self.num_collisions=0   # counts total number of collisions with obstacles
+        self.num_obstacles = 0  # counts total number of obstacles presently in the track
+        self.num_collisions = 0  # counts total number of collisions with obstacles
+        self.total_grass_timesteps = 0  # counts total timesteps on grass
+        self.total_road_or_obstacle_timesteps = 0  # counts total timesteps on road/obstacles
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -287,7 +311,7 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
             if i == 0:
                 return False  # Failed
             pass_through_start = (
-                track[i][0] > self.start_alpha and track[i - 1][0] <= self.start_alpha
+                    track[i][0] > self.start_alpha and track[i - 1][0] <= self.start_alpha
             )
             if pass_through_start and i2 == -1:
                 i2 = i
@@ -299,7 +323,7 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
         assert i1 != -1
         assert i2 != -1
 
-        track = track[i1 : i2 - 1]
+        track = track[i1: i2 - 1]
 
         first_beta = track[0][1]
         first_perp_x = math.cos(first_beta)
@@ -354,15 +378,15 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
             # With probability OBSTACLE_PROB, add an obstacle,
             # which is just a red-colored tile whose friction is equal to the
             # OBSTACLE_PENALTY parameter, and which covers one half of the road surface.
-            if(np.random.uniform() < OBSTACLE_PROB and (i - last_obst_idx) > OBSTACLE_SPACING and not border[i]):
+            if (np.random.uniform() < OBSTACLE_PROB and (i - last_obst_idx) > OBSTACLE_SPACING and not border[i]):
                 last_obst_idx = i
-                road1_mid = (x1,y1)
-                road2_mid = (x2,y2)
+                road1_mid = (x1, y1)
+                road2_mid = (x2, y2)
                 # Randomize either a left or right obstacle
                 # And make the road tile only cover the other half of the road
                 left_vertices = [road1_l, road1_mid, road2_mid, road2_l]
                 right_vertices = [road1_mid, road1_r, road2_r, road2_mid]
-                if(np.random.uniform() < 0.5):
+                if (np.random.uniform() < 0.5):
                     obst = left_vertices
                     vertices = right_vertices
                 else:
@@ -428,12 +452,15 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
         self.road_poly = []
         self.num_obstacles = 0
         self.num_collisions = 0
+        self.total_grass_timesteps = 0
+        self.total_road_or_obstacle_timesteps = 0
 
         global OBSTACLE_PROB
-        OBSTACLE_PROB=random.choice(PROBS)
-        
+
+        OBSTACLE_PROB = random.choice(PROBS)
+
         while True:
-                
+
             success = self._create_track()
             if success:
                 break
@@ -444,7 +471,7 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
                 )
         self.car = Car(self.world, *self.track[0][1:4])
 
-        print(f"Total number of obstacles in the track: {self.num_obstacles}")
+        # print(f"Total number of obstacles in the track: {self.num_obstacles}")
 
         return self.step(None)[0]
 
@@ -469,6 +496,13 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
             self.car.fuel_spent = 0.0
             step_reward = self.reward - self.prev_reward
             self.prev_reward = self.reward
+
+            # Check if car is on the grass
+            if check_if_car_on_grass(self.car):
+                self.total_grass_timesteps += 1
+            else:
+                self.total_road_or_obstacle_timesteps += 1
+
             if self.tile_visited_count == len(self.track):
                 done = True
             x, y = self.car.hull.position
@@ -476,7 +510,10 @@ class CarRacingObstaclesEval(gym.Env, EzPickle):
                 done = True
                 step_reward = -100
 
-        return self.state, step_reward, done, {"num_obstacles": self.num_obstacles, "num_collisions": self.num_collisions}
+        return self.state, step_reward, done, {"num_obstacles": self.num_obstacles,
+                                               "num_collisions": self.num_collisions, "tiles": self.tile_visited_count,
+                                               "grass_time": self.total_grass_timesteps,
+                                               "total_time": self.total_road_or_obstacle_timesteps}
 
     def render(self, mode="human"):
         assert mode in ["human", "state_pixels", "rgb_array"]
@@ -685,6 +722,7 @@ if __name__ == "__main__":
 
     a = np.array([0.0, 0.0, 0.0])
 
+
     def key_press(k, mod):
         global restart
         if k == 0xFF0D:
@@ -698,6 +736,7 @@ if __name__ == "__main__":
         if k == key.DOWN:
             a[2] = +0.8  # set 1.0 for wheels to block to zero rotation
 
+
     def key_release(k, mod):
         if k == key.LEFT and a[0] == -1.0:
             a[0] = 0
@@ -707,6 +746,7 @@ if __name__ == "__main__":
             a[1] = 0
         if k == key.DOWN:
             a[2] = 0
+
 
     env = CarRacingObstaclesEval()
     env.render()
