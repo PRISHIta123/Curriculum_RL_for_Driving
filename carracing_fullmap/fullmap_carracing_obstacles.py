@@ -33,6 +33,8 @@ Created by Oleg Klimov. Licensed on the same terms as the rest of OpenAI Gym.
 import sys
 import math
 import numpy as np
+import argparse
+import os
 
 import Box2D
 from Box2D.b2 import fixtureDef
@@ -64,7 +66,7 @@ ZOOM = 2.7  # Camera zoom
 ZOOM_FOLLOW = True  # Set to False for fixed view (don't use zoom)
 
 TRACK_DETAIL_STEP = 21 / SCALE
-TRACK_TURN_RATE = 0.71
+TRACK_TURN_RATE = 0.31
 TRACK_WIDTH = 40 / SCALE
 BORDER = 8 / SCALE
 BORDER_MIN_COUNT = 4
@@ -72,7 +74,7 @@ BORDER_MIN_COUNT = 4
 ROAD_COLOR = [0.4, 0.4, 0.4]
 
 #probability of an obstacle
-OBSTACLE_PROB = 0.13
+OBSTACLE_PROB = 0.05
 OBSTACLE_PENALTY = 50.0
 OBSTACLE_SPACING = 20   # minimum distance between obstacles (in tiles)
 OBSTACLE_COLOR = [240/255, 102/255, 102/255] # light red
@@ -675,6 +677,11 @@ class CarRacingObstacles(gym.Env, EzPickle):
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--turnrate", type=float, default=0.31, help="CarRacing env turn rate")
+    parser.add_argument("--obs_prob", type=float, default=0.05, help="CarRacing env obstacle probability")
+
     from pyglet.window import key
 
     a = np.array([0.0, 0.0, 0.0])
@@ -701,6 +708,15 @@ if __name__ == "__main__":
             a[1] = 0
         if k == key.DOWN:
             a[2] = 0
+
+
+    args = parser.parse_args()
+
+    if args.turnrate:
+        TRACK_TURN_RATE = args.turnrate
+
+    if args.obs_prob:
+        OBSTACLE_PROB = args.obs_prob
 
     env = CarRacingObstacles()
     env.render()
