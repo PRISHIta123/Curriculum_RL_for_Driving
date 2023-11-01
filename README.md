@@ -49,7 +49,7 @@ When prompted to enter a MODE choose from the following:
 2.PPO_Obstacles_Curriculum_BO- BO obstacles only curriculum  
 3.PPO_Both_Curriculum_BO- BO both curriculum  
 
-To observe existing Bayesian Optimization runs/results see the Turnates_BO.pdf, Obstacles_BO.pdf and Both_BO.pdf files in the BayesOpt folder.
+To observe existing Bayesian Optimization runs/results see the Turnates_BO.pdf, Obstacles_BO.pdf and Both_BO.pdf files in the BO_runs folder.
 
 ### Training/Evaluation Curves Visualization  
 
