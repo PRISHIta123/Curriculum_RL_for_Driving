@@ -36,8 +36,7 @@ where MODE is based on a particular training method/environment setting combinat
 8.PPO_Both_Curriculum_BO- BO both curriculum  
 
 To test a trained PPO Agent in a particular setting (after training) run:  
-```python CarRacing_PPO.py --mode MODE --train False```
-
+```python CarRacing_PPO.py --mode MODE --train False```  
 where MODE follows the same format as above. 
 
 ### Searching for Curricula using Bayesian Optimization  
