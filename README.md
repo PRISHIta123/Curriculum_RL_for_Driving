@@ -11,7 +11,7 @@ Source code for top-down imagery: https://github.com/rohanb2018/carracing_fullma
 
 The paper can be accessed here [add link]
 
-<img src="https://github.com/PRISHIta123/Curriculum_RL_for_Driving/blob/main/kappa_p_combined.png?raw=true"/>
+<img width="800" height="600" src="https://github.com/PRISHIta123/Curriculum_RL_for_Driving/blob/main/kappa_p_combined.png?raw=true"/>
 
 ### Installation 
 
