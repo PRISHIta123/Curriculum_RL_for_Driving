@@ -12,7 +12,7 @@ Source code for top-down imagery: https://github.com/rohanb2018/carracing_fullma
 The paper can be accessed here [add link]
 
 <p align="center">
-<a style="font-size: 12px;">Examples of CarRacing tracks (with environment parameters turn rate k and obstacle probability p):
+<a style="font-size: 8px;">Examples of CarRacing tracks (with environment parameters turn rate k and obstacle probability p):
 (top): [0.31, 0.05], (bottom): [0.71, 0.13]</a>
 <img width="500" height="400" src="https://github.com/PRISHIta123/Curriculum_RL_for_Driving/blob/main/kappa_p_combined.png?raw=true"/>
 </p>
