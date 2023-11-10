@@ -230,12 +230,12 @@ class CustomCallback(EventCallback):
 def fn(ranges):
     if MODE == 1:
         from gym.wrappers.time_limit import TimeLimit
-        from TurnRates.car_racing_curriculum import CarRacingCurriculum
+        from envs.TurnRates.car_racing_curriculum import CarRacingCurriculum
 
         env = TimeLimit(CarRacingCurriculum(ranges), max_episode_steps=1000)
 
         from gym.wrappers.time_limit import TimeLimit
-        from TurnRates.car_racing_eval import CarRacingEval
+        from envs.TurnRates.car_racing_eval import CarRacingEval
 
         eval_env = TimeLimit(CarRacingEval(), max_episode_steps=1000)
 
@@ -243,12 +243,12 @@ def fn(ranges):
 
     elif MODE == 2:
         from gym.wrappers.time_limit import TimeLimit
-        from Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
+        from envs.Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
 
         env = TimeLimit(CarRacingObstaclesCurriculum(ranges), max_episode_steps=1000)
 
         from gym.wrappers.time_limit import TimeLimit
-        from Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
+        from envs.Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
 
         eval_env = TimeLimit(CarRacingObstaclesEval(), max_episode_steps=1000)
 
@@ -256,12 +256,12 @@ def fn(ranges):
 
     elif MODE == 3:
         from gym.wrappers.time_limit import TimeLimit
-        from Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
+        from envs.Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
 
         env = TimeLimit(CarRacingObstaclesCurriculumBoth(ranges), max_episode_steps=1000)
 
         from gym.wrappers.time_limit import TimeLimit
-        from Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
+        from envs.Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
 
         eval_env = TimeLimit(CarRacingObstaclesEvalBoth(), max_episode_steps=1000)
 
@@ -388,11 +388,11 @@ if __name__ == "__main__":
     #Unpickle values
 
     if MODE==1:
-        base_dir='./Turnrates_BO/vars/'
+        base_dir='./BayesOpt/Turnrates_BO/vars/'
     elif MODE==2:
-        base_dir='./Obstacles_BO/vars/'
+        base_dir='./BayesOpt/Obstacles_BO/vars/'
     elif MODE==3:
-        base_dir='./Both_BO/vars/'
+        base_dir='./BayesOpt/Both_BO/vars/'
 
     with open(base_dir+'x_init'+str(ITER-1)+'.pkl','rb') as f:
         x_init = pickle.load(f)

@@ -11,6 +11,8 @@ Source code for top-down imagery: https://github.com/rohanb2018/carracing_fullma
 
 The paper can be accessed here [add link]
 
+<img src="https://github.com/PRISHIta123/Curriculum_RL_for_Driving/blob/main/kappa_p_combined.png?raw=true"/>
+
 ### Installation 
 
 To install the required packages clone the repository and use the following:    
@@ -21,9 +23,9 @@ To install the required packages clone the repository and use the following:
 1.Three methods of either default, manual curriculum or BO Curriculum can be used for training the PPO RL autonomous driving agent.    
 2.Each of these methods can be used to train and evaluate the PPO agent in either constant/varying turnrates, obstacle probabilities or a combination of both.  
 
-### Training/Testing existing curricula 
+### Training/Testing PPO Agents with existing curricula 
 
-To train a PPO Agent in a particular setting run:  
+To train a PPO Agent in a particular MODE (using previously found manual/BO curricula which are hardcoded) run:  
 ```python CarRacing_PPO.py --mode MODE --train True```  
 where MODE is based on a particular training method/environment setting combination:  
 1.PPO- Default turnrates  
@@ -41,7 +43,7 @@ where MODE follows the same format as above.
 
 ### Searching for Curricula using Bayesian Optimization  
 
-To run Bayesian Optimization to search for curricula in a particular MODE run:  
+To run Bayesian Optimization to search for curricula in a particular MODE on your own run:  
 ```./BayesOpt.sh```  
 
 When prompted to enter a MODE choose from the following:  
@@ -49,7 +51,11 @@ When prompted to enter a MODE choose from the following:
 2.PPO_Obstacles_Curriculum_BO- BO obstacles only curriculum  
 3.PPO_Both_Curriculum_BO- BO both curriculum  
 
-To observe existing Bayesian Optimization runs/results see the Turnates_BO.pdf, Obstacles_BO.pdf and Both_BO.pdf files in the BO_runs folder.
+To train a PPO Agent in a MODE (using new BO curricula) run the training code using:  
+```python CarRacing_PPO.py --mode MODE --train True --ranges t1 t2 t3```  
+where t1,t2,t3 are the 3 turnpoints output in the best curriculum found by Bayesian Optimization in the list format [t1,t2,t3].  
+
+To observe the existing Bayesian Optimization runs/results see the Turnates_BO.pdf, Obstacles_BO.pdf and Both_BO.pdf files in the BO_runs folder.
 
 ### Training/Evaluation Curves Visualization  
 

@@ -175,17 +175,18 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=int, help="Training/Testing_mode: 1.Default Turnrates \n 2.Default Obstacle probability/both \n 3.Manual Turnrates curriculum \n 4.Manual Obstacle probability curriculum \n 5.Manual Both curriculum \n 6.BO Turnrates curriculum \n 7.BO Obstacle probability curriculum \n 8.BO Both curriculum")
-    parser.add_argument("--train", type=bool, help="Train/Test Train:True Test:False")
+    parser.add_argument("--train", type=str, help="Train/Test Train:True Test:False")
+    parser.add_argument("--ranges", type=float, nargs="+", help="Ranges found with Bayesian Optimization")
 
     args = parser.parse_args()
 
     log_path = os.path.join('./runs')
 
-    if args.train is True:
+    if args.train=="True":
 
         if args.mode == 1:
             from gym.wrappers.time_limit import TimeLimit
-            from car_racing_default import CarRacingDefault
+            from envs.car_racing_default import CarRacingDefault
 
             env = TimeLimit(CarRacingDefault(), max_episode_steps=1000)
             eval_env = env
@@ -197,7 +198,7 @@ if __name__=='__main__':
 
         elif args.mode == 2:
             from gym.wrappers.time_limit import TimeLimit
-            from car_racing_obstacles import CarRacingObstacles
+            from envs.car_racing_obstacles import CarRacingObstacles
 
             env = TimeLimit(CarRacingObstacles(), max_episode_steps=1000)
             eval_env = env
@@ -208,13 +209,13 @@ if __name__=='__main__':
 
         elif args.mode == 3:
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_curriculum import CarRacingCurriculum
+            from envs.TurnRates.car_racing_curriculum import CarRacingCurriculum
 
             ranges = [230, 460, 756]
             env = TimeLimit(CarRacingCurriculum(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_eval import CarRacingEval
+            from envs.TurnRates.car_racing_eval import CarRacingEval
 
             eval_env = TimeLimit(CarRacingEval(), max_episode_steps=1000)
 
@@ -224,13 +225,13 @@ if __name__=='__main__':
 
         elif args.mode == 4:
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
+            from envs.Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
 
             ranges = [120, 240, 660]
             env = TimeLimit(CarRacingObstaclesCurriculum(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
+            from envs.Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
 
             eval_env = TimeLimit(CarRacingObstaclesEval(), max_episode_steps=1000)
 
@@ -240,13 +241,14 @@ if __name__=='__main__':
 
         elif args.mode == 5:
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
+            from envs.Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
 
             ranges = [198, 396, 775]
+
             env = TimeLimit(CarRacingObstaclesCurriculumBoth(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
+            from envs.Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
 
             eval_env = TimeLimit(CarRacingObstaclesEvalBoth(), max_episode_steps=1000)
 
@@ -256,13 +258,17 @@ if __name__=='__main__':
 
         elif args.mode == 6:
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_curriculum import CarRacingCurriculum
+            from envs.TurnRates.car_racing_curriculum import CarRacingCurriculum
 
             ranges = [239, 442, 711]
+
+            if args.ranges:
+                ranges=args.ranges
+
             env = TimeLimit(CarRacingCurriculum(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_eval import CarRacingEval
+            from envs.TurnRates.car_racing_eval import CarRacingEval
 
             eval_env = TimeLimit(CarRacingEval(), max_episode_steps=1000)
 
@@ -272,13 +278,17 @@ if __name__=='__main__':
 
         elif args.mode == 7:
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
+            from envs.Obstacles.car_racing_obstacles_curriculum import CarRacingObstaclesCurriculum
 
             ranges = [101, 238, 670]
+
+            if args.ranges:
+                ranges=args.ranges
+
             env = TimeLimit(CarRacingObstaclesCurriculum(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
+            from envs.Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
 
             eval_env = TimeLimit(CarRacingObstaclesEval(), max_episode_steps=1000)
 
@@ -288,13 +298,17 @@ if __name__=='__main__':
 
         elif args.mode == 8:
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
+            from envs.Both.car_racing_obstacles_curriculum_both import CarRacingObstaclesCurriculumBoth
 
             ranges = [161, 418, 737]
+
+            if args.ranges:
+                ranges=args.ranges
+
             env = TimeLimit(CarRacingObstaclesCurriculumBoth(ranges), max_episode_steps=1000)
 
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
+            from envs.Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
 
             eval_env = TimeLimit(CarRacingObstaclesEvalBoth(), max_episode_steps=1000)
 
@@ -317,79 +331,80 @@ if __name__=='__main__':
         ppo_path = os.path.join(final_path)
         model.save(ppo_path)
 
-    elif args.train is False:
+    elif args.train=="False":
 
         if args.mode == 1:
             from gym.wrappers.time_limit import TimeLimit
-            from car_racing_default import CarRacingDefault
+            from envs.car_racing_default import CarRacingDefault
             env = TimeLimit(CarRacingDefault(), max_episode_steps=1000)
             eval_env = env
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model'
+            best_path = './Training/Saved_Models/PPO_car_best_Model/best_model.zip'
 
         elif args.mode == 2:
             from gym.wrappers.time_limit import TimeLimit
-            from car_racing_obstacles import CarRacingObstacles
+            from envs.car_racing_obstacles import CarRacingObstacles
 
             env = TimeLimit(CarRacingObstacles(), max_episode_steps=1000)
             eval_env = env
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_obstacles'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_obstacles/best_model.zip'
 
         elif args.mode == 3:
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_eval import CarRacingEval
+            from envs.TurnRates.car_racing_eval import CarRacingEval
 
             eval_env = TimeLimit(CarRacingEval(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum/best_model.zip'
 
         elif args.mode == 4:
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
+            from envs.Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
 
             eval_env = TimeLimit(CarRacingObstaclesEval(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_obstacles'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_obstacles/best_model.zip'
 
         elif args.mode == 5:
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
+            from envs.Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
 
             eval_env = TimeLimit(CarRacingObstaclesEvalBoth(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_both'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_both/best_model.zip'
 
         elif args.mode == 6:
             from gym.wrappers.time_limit import TimeLimit
-            from TurnRates.car_racing_eval import CarRacingEval
+            from envs.TurnRates.car_racing_eval import CarRacingEval
 
             eval_env = TimeLimit(CarRacingEval(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_BO'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_BO/best_model.zip'
 
         elif args.mode == 7:
             from gym.wrappers.time_limit import TimeLimit
-            from Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
+            from envs.Obstacles.car_racing_obstacles_eval import CarRacingObstaclesEval
 
             eval_env = TimeLimit(CarRacingObstaclesEval(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_obstacles_BO'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_obstacles_BO/best_model.zip'
 
         elif args.mode == 8:
             from gym.wrappers.time_limit import TimeLimit
-            from Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
+            from envs.Both.car_racing_obstacles_eval_both import CarRacingObstaclesEvalBoth
 
             eval_env = TimeLimit(CarRacingObstaclesEvalBoth(), max_episode_steps=1000)
 
-            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_both_BO'
+            best_path = './Training/Saved_Models/PPO_car_best_Model_curriculum_both_BO/best_model.zip'
 
         ppo_path = os.path.join(best_path)
         best_model = PPO.load(ppo_path, env=eval_env)
 
-        evalue = custom_evaluate_policy(best_model, eval_env, n_eval_episodes=500, render=False)
+        evalue = custom_evaluate_policy(best_model, eval_env, n_eval_episodes=500, render=True)
         eval_env.close()
         evalue
+
 
 
         
