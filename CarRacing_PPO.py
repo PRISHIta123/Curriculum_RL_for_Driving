@@ -401,7 +401,7 @@ if __name__=='__main__':
         ppo_path = os.path.join(best_path)
         best_model = PPO.load(ppo_path, env=eval_env)
 
-        evalue = custom_evaluate_policy(best_model, eval_env, n_eval_episodes=500, render=True)
+        evalue = custom_evaluate_policy(best_model, eval_env, n_eval_episodes=500, render=False)
         eval_env.close()
         evalue
 
