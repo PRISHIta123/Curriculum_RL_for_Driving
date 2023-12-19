@@ -9,7 +9,8 @@ Also contains top-down imagery code for both the environments under different tu
 Source code for obstacles variant environment: https://github.com/rohanb2018/carracing_obstacles     
 Source code for top-down imagery: https://github.com/rohanb2018/carracing_fullmap   
 
-The paper can be accessed here [add link]
+The paper can be accessed here: https://arxiv.org/abs/2312.10557  
+The workshop version of the paper can be accessed at (Paper ID 5): https://wp.nyu.edu/workshopiros2023superautonomy/   
 
 Examples of CarRacing tracks (with environment parameters turn rate k and obstacle probability p):  
 top: [k=0.31,p=0.05], bottom: [k=0.71,p=0.13]  
@@ -92,4 +93,13 @@ Performance results can be accessed at the "Results.pdf" and the "Performance Co
 ### Citation 
 
 If you find our work useful in your research, please consider citing us:
-[Add bibtex]
+```
+@article{banerjee2023improving,
+  title={Improving Environment Robustness of Deep Reinforcement Learning Approaches for Autonomous Racing Using Bayesian Optimization-based Curriculum Learning},
+  author={Banerjee, Rohan and Ray, Prishita and Campbell, Mark},
+  journal={Learning Robot Super Autonomy Workshop, IROS 2023},
+  doi={10.48550/arXiv.2312.10557}
+  year={2023},
+  primaryClass={cs.RO}
+}
+```
